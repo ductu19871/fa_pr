@@ -6,6 +6,7 @@ import qrcode
 import qrcode.image.svg
 from django.conf import settings
 from django.db import models
+from io import BytesIO
 
 
 class UserTwoFactorAuthData(models.Model):
@@ -15,14 +16,25 @@ class UserTwoFactorAuthData(models.Model):
     session_identifier = models.UUIDField(blank=True, null=True)
 
     def generate_qr_code(self, name: Optional[str] = None) -> str:
+    # Generate a TOTP object using the OTP secret
         totp = pyotp.TOTP(self.otp_secret)
+        
+        # Generate the provisioning URI for the QR code
         qr_uri = totp.provisioning_uri(name=name, issuer_name="Styleguide Example Admin 2FA Demo")
-
+        
+        # Create the QR code as an SVG using SvgPathImage
         image_factory = qrcode.image.svg.SvgPathImage
         qr_code_image = qrcode.make(qr_uri, image_factory=image_factory)
-
-        # The result is going to be an HTML <svg> tag
-        return qr_code_image.to_string().decode("utf_8")
+        
+        # Save the SVG to an in-memory file
+        stream = BytesIO()
+        qr_code_image.save(stream)
+        
+        # Get the SVG content as a string
+        svg_data = stream.getvalue().decode("utf-8")
+        
+        # Return the SVG data as a string
+        return svg_data
 
     def validate_otp(self, otp: str) -> bool:
         totp = pyotp.TOTP(self.otp_secret)
