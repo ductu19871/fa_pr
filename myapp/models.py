@@ -17,10 +17,10 @@ class UserTwoFactorAuthData(models.Model):
 
     def generate_qr_code(self, name: Optional[str] = None) -> str:
     # Generate a TOTP object using the OTP secret
-        totp = pyotp.TOTP(self.otp_secret)
+        totp = pyotp.TOTP(self.otp_secret, interval=60)
         
         # Generate the provisioning URI for the QR code
-        qr_uri = totp.provisioning_uri(name=name, issuer_name="Styleguide Example Admin 2FA Demo")
+        qr_uri = totp.provisioning_uri(name=name, issuer_name="Sonix Example Admin 2FA Demo")
         
         # Create the QR code as an SVG using SvgPathImage
         image_factory = qrcode.image.svg.SvgPathImage

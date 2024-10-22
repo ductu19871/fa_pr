@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from .utils import send_otp
 import pyotp
 from django.contrib.auth.models import User
+from .services import user_two_factor_auth_data_create
 # View for the login page
 def login_view(request):
     print ('**ldfjdlkf')
@@ -13,8 +14,10 @@ def login_view(request):
         password = request.POST['password']
         user = authenticate(request, username=username, password=password)
         if user is not None:
+            user = get_object_or_404(User, username=username)
+            otp_secret_key = user_two_factor_auth_data_create(user).otp_secret
             request.session['username'] = username
-            send_otp(request)
+            send_otp(request, otp_secret_key=otp_secret_key)
             return redirect('otp')
         else:
             error_message = 'Invalid U and P'
@@ -37,7 +40,11 @@ def otp_view(request):
     if request.method == 'POST':
         otp = request.POST['otp']
         username = request.session['username']
+        #dành cho cách 1
         otp_secret_key = request.session['otp_secret_key']
+        #dành cho cách 2
+        # user = get_object_or_404(User, username=username)
+        # otp_secret_key = user_two_factor_auth_data_create(user).otp_secret
         valid_date = request.session['otp_valid_date']
         if otp_secret_key:
             totp =  pyotp.TOTP(otp_secret_key, interval=60)
